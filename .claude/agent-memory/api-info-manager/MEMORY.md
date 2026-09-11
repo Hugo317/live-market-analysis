@@ -1,0 +1,2 @@
+- [Quota-driven design: EODHD bulk-fetch exclusion & fetch_raw.py contract](quota_design.md) — EODHD 20/day unbatched forces on-demand-only fetch; merge-write JSON contract
+- [Testing fetch_raw.py without network calls](testing_without_network.md) — stub apis modules via sys.modules + importlib, never import real network code

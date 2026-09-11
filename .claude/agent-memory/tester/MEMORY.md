@@ -1,0 +1,1 @@
+- [Redesign Verification (2026-09-11)](redesign_verification.md) — Historical-only redesign QA: all code paths verified PASS, but raw data files are stale and need regeneration

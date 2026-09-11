@@ -1,0 +1,2 @@
+- [Raw JSON contract history](raw-contract-history.md) — merge.py's raw/*.json shape changed from flat list-of-quotes to dict-of-symbol-to-bar-list; check current fetch_raw.py contract before assuming shape.
+- [Testing merge.py safely](testing-merge-safely.md) — how to validate merge/clean/analyze changes without touching real data/raw files or calling live APIs.

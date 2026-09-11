@@ -1,0 +1,40 @@
+API'S:
+- EODHD Europe
+- Twelve Data US
+- iTick Asia (free tier, api-free.itick.org, 5 calls/min limit)
+
+Project structure:
+One module for reading each api (3 modueles)
+One module to merge the data requiered
+one module to get news from a specific company (using yfinance) 
+One module to clean the data
+One modute to analyze the data
+One module to build the DB
+One module to build the dashboard (using dash)
+
+Claude stucture:
+one agent that controls all subagents
+one agent that is the api info manager
+    - spawns 3 api agents one for each region 
+one agent that gets handles the data
+one agent that builds the db
+one agent that builds the dashboard
+one agent that tests everything before shipping
+
+Project plan: 
+build the db on sqlite
+have a dash board that updates every 5 minutes
+or everytime you press refresh
+the dash board should have 4 tabes 
+(Global, US, Europe, Asia)
+Use plotly to generate the graphs
+- top 20 stocks and their values/growth
+    (this should be able to see them hourly dayly week month)
+- top 5 gaining companies in the top 500
+    (by clicking on the company should be able to see comapanys summary)
+- top 5 growing countries
+    (this should be able to see them hourly dayly week month)
+- bottom 5 growing countries
+    (this should be able to see them hourly dayly week month)
+ 
+Dashboard should also using yfinance display the top 5 stories fo the day 

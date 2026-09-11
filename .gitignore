@@ -1,0 +1,25 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Secrets
+.env
+
+# API response cache (dev only)
+.cache/
+
+# SQLite database
+*.db
+
+# Raw quote handoff files (written by fetch_raw, read by merge)
+data/raw/
+
+# Local Playwright MCP session output
+.playwright-mcp/
