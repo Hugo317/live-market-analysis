@@ -53,6 +53,9 @@ def _normalize_eodhd_symbol(symbol: str, bars: list[dict]) -> list[dict]:
 
 
 def _normalize_twelve_data_symbol(symbol: str, bars: list[dict]) -> list[dict]:
+    # symbol may carry a "#<period>" suffix (e.g. "AAPL#w" from
+    # backfill_extra_periods) -- strip it back off before storing.
+    symbol = symbol.split("#", 1)[0]
     # bars are newest -> oldest as stored; reverse to oldest -> newest before diffing
     bars = list(reversed(bars))
     rows = [
@@ -72,8 +75,10 @@ def _normalize_twelve_data_symbol(symbol: str, bars: list[dict]) -> list[dict]:
 
 
 def _normalize_itick_key(key: str, response: dict) -> list[dict]:
-    # key is "REGION:CODE"; bars are already oldest -> newest
+    # key is "REGION:CODE", optionally with a "#<period>" suffix on the code
+    # (e.g. "HK:700#w" from backfill_extra_periods); bars are already oldest -> newest
     _, code = key.split(":", 1)
+    code = code.split("#", 1)[0]
     bars = response["data"]
     rows = [
         {
@@ -85,6 +90,30 @@ def _normalize_itick_key(key: str, response: dict) -> list[dict]:
             "low": bar["l"],
             "close": bar["c"],
             "volume": bar["v"],
+        }
+        for bar in bars
+    ]
+    return _with_change(rows)
+
+
+def _normalize_yahoo_key(key: str, bars: list[dict]) -> list[dict]:
+    # key is "REGION:SYMBOL" using the DB's own region/symbol convention
+    # (e.g. "EU:III.LSE", "US:AAPL", "ASIA:700"), optionally with a
+    # "#<interval>" suffix on the symbol (e.g. "US:AAPL#1wk" from
+    # backfill_yahoo_deep) -- strip it back off before storing. bars are
+    # already oldest -> newest.
+    region, symbol = key.split(":", 1)
+    symbol = symbol.split("#", 1)[0]
+    rows = [
+        {
+            "region": region,
+            "symbol": symbol,
+            "timestamp": pd.to_datetime(bar["date"]),
+            "open": bar["open"],
+            "high": bar["high"],
+            "low": bar["low"],
+            "close": bar["close"],
+            "volume": bar["volume"],
         }
         for bar in bars
     ]
@@ -112,6 +141,18 @@ def merge_quotes() -> pd.DataFrame:
     rows += _normalize_all("eodhd", _load_raw("eodhd"), _normalize_eodhd_symbol)
     rows += _normalize_all("twelve_data", _load_raw("twelve_data"), _normalize_twelve_data_symbol)
     rows += _normalize_all("itick", _load_raw("itick"), _normalize_itick_key)
+    # Yahoo, and the extra-period Twelve Data/iTick pulls, are supplementary
+    # and optional -- these files only exist once the corresponding backfill
+    # has been run, unlike the 3 required providers above.
+    for provider, normalize_fn in (
+        ("yahoo", _normalize_yahoo_key),
+        ("twelve_data_extra", _normalize_twelve_data_symbol),
+        ("itick_extra", _normalize_itick_key),
+    ):
+        try:
+            rows += _normalize_all(provider, _load_raw(provider), normalize_fn)
+        except FileNotFoundError:
+            pass
     return pd.DataFrame(rows, columns=COLUMNS)
 
 

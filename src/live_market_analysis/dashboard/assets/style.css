@@ -1,0 +1,343 @@
+/* Live Market Analysis - dark, Claude-style design system.
+   Roles follow the dataviz skill's palette structure (see CLAUDE.md / dataviz
+   skill): fixed dark surfaces, a clay accent, and status green/red reserved
+   for gainers/losers rather than region identity. */
+
+:root {
+  --page: #0d0d0d;
+  --surface: #1a1a19;
+  --surface-raised: #202020;
+  --border: rgba(255, 255, 255, 0.10);
+  --border-strong: rgba(255, 255, 255, 0.16);
+
+  --text-primary: #ffffff;
+  --text-secondary: #c3c2b7;
+  --text-muted: #898781;
+
+  --accent: #da7756;
+  --accent-hover: #e6896b;
+  --accent-wash: rgba(218, 119, 86, 0.14);
+
+  --good: #0ca30c;
+  --good-wash: rgba(12, 163, 12, 0.14);
+  --critical: #e66767;
+  --critical-wash: rgba(230, 103, 103, 0.14);
+
+  --gridline: #2c2c2a;
+  --baseline: #383835;
+
+  --radius: 10px;
+  --radius-sm: 6px;
+
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  background: var(--page);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  margin: 0;
+}
+
+#react-entry-point, ._dash-app-content {
+  background: var(--page);
+}
+
+.app-shell {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 24px 64px;
+}
+
+/* Header */
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 22px 24px;
+  margin: 0 0 28px;
+  border-bottom: 1px solid var(--border);
+}
+
+.app-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-wash);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.app-title {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.app-subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 2px 0 0;
+}
+
+/* Hero stat row */
+.hero-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.stat-card {
+  flex: 1 1 200px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+}
+
+.stat-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  margin: 0 0 6px;
+}
+
+.stat-value {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.stat-value.good { color: var(--good); }
+.stat-value.critical { color: var(--critical); }
+
+.stat-sub {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin: 4px 0 0;
+}
+
+/* Section cards */
+.section-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px 24px;
+  margin-bottom: 20px;
+}
+
+.section-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 6px;
+}
+
+.section-note {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin: 0 0 16px;
+}
+
+/* Buttons */
+.btn-primary {
+  background: var(--accent);
+  color: #1a1006;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 9px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.btn-primary:hover {
+  background: var(--accent-hover);
+}
+
+/* Search / dropdowns */
+.symbol-search .Select-control,
+.symbol-search .select-control,
+.dash-dropdown .Select-control {
+  background: var(--surface-raised) !important;
+  border: 1px solid var(--border-strong) !important;
+  border-radius: var(--radius-sm) !important;
+  color: var(--text-primary) !important;
+}
+
+.symbol-search input {
+  color: var(--text-primary) !important;
+}
+
+.Select-menu-outer {
+  background: var(--surface-raised) !important;
+  border: 1px solid var(--border-strong) !important;
+  color: var(--text-primary) !important;
+}
+
+.Select-value-label, .Select-placeholder, .VirtualizedSelectOption {
+  color: var(--text-primary) !important;
+}
+
+.VirtualizedSelectFocusedOption {
+  background: var(--accent-wash) !important;
+}
+
+/* Region tabs */
+.dash-tabs .tab, .dash-tabs .tab--selected {
+  background: transparent !important;
+  border: none !important;
+  color: var(--text-muted) !important;
+  font-family: var(--font-sans) !important;
+  padding: 10px 4px !important;
+  margin-right: 20px !important;
+}
+
+.dash-tabs .tab--selected {
+  color: var(--text-primary) !important;
+  border-bottom: 2px solid var(--accent) !important;
+  font-weight: 600 !important;
+}
+
+/* Radio items (period selector) styled as a pill group */
+.period-selector label {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  margin-right: 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.period-selector input {
+  margin-right: 6px;
+  accent-color: var(--accent);
+}
+
+/* Empty state */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 36px 12px;
+  color: var(--text-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.empty-state .empty-icon {
+  font-size: 22px;
+  opacity: 0.7;
+}
+
+/* Status / error banner */
+.status-note {
+  font-size: 13px;
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  margin: 10px 0 0;
+}
+
+.status-note.error {
+  background: var(--critical-wash);
+  color: var(--critical);
+}
+
+.status-note.info {
+  background: var(--accent-wash);
+  color: var(--accent-hover);
+}
+
+.status-note:empty {
+  display: none;
+}
+
+/* News grid */
+.news-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.news-card {
+  display: block;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  text-decoration: none;
+  color: var(--text-primary);
+  transition: border-color 0.15s ease;
+}
+
+.news-card:hover {
+  border-color: var(--border-strong);
+}
+
+.news-card-image {
+  width: 100%;
+  height: 110px;
+  object-fit: cover;
+  display: block;
+  background: var(--surface);
+}
+
+.news-card-title {
+  display: block;
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+/* Dash DataTable overrides */
+.dash-table-container {
+  font-family: var(--font-sans) !important;
+}
+
+.dash-spreadsheet-container .dash-spreadsheet-inner table {
+  font-family: var(--font-sans) !important;
+}
+
+.dash-spreadsheet-container th {
+  background: var(--surface-raised) !important;
+  color: var(--text-muted) !important;
+  border-color: var(--border) !important;
+  font-size: 12px !important;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.dash-spreadsheet-container td {
+  background: var(--surface) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border) !important;
+  font-family: var(--font-mono) !important;
+  font-size: 13px !important;
+}
+
+.dash-spreadsheet-container .dash-cell div {
+  color: inherit !important;
+}
