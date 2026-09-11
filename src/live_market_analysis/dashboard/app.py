@@ -7,7 +7,7 @@ import plotly.io as pio
 from dash import Dash, Input, Output, State, dash_table, dcc, html
 
 from live_market_analysis.data_handling import analyze
-from live_market_analysis.data_handling.db import read_quotes
+from live_market_analysis.data_handling.db import read_latest_quotes, read_recent_bars, read_symbol_history
 from live_market_analysis.data_handling.symbols import (
     get_asia_pairs,
     get_asia_symbol_names,
@@ -45,6 +45,11 @@ for _s in TWELVE_DATA_SYMBOLS:
 for _region, _code in ITICK_PAIRS:
     _name = SYMBOL_NAMES.get(_code, "")
     SYMBOL_OPTIONS.append({"label": f"{_code} - {_name}" if _name else _code, "value": _code, "region": "Asia"})
+
+# symbol -> DB region code ("EU"/"US"/"ASIA"), so the trend chart can query
+# just that one symbol's rows instead of scanning the whole table.
+_TAB_TO_REGION_CODE = {"Europe": "EU", "US": "US", "Asia": "ASIA"}
+SYMBOL_REGION_CODE = {o["value"]: _TAB_TO_REGION_CODE[o["region"]] for o in SYMBOL_OPTIONS}
 
 REGION_TABS = ["Global", "US", "Europe", "Asia"]
 REGION_CODE = {"US": "US", "Europe": "EU", "Asia": "ASIA"}
@@ -152,20 +157,6 @@ def _with_company(df):
     df = df.copy()
     df["company"] = df["symbol"].map(SYMBOL_NAMES).fillna("")
     return df
-
-
-def _latest_per_symbol(df):
-    """Collapses a multi-row-per-symbol historical DataFrame down to the most
-    recent bar per (region, symbol), for views that want "current standing"
-    (top gainers, top by volume, top by volatility, region growth, and the
-    click-through quotes table) rather than every historical bar ever fetched.
-    """
-    fn = getattr(analyze, "latest_per_symbol", None)
-    if fn is not None:
-        return fn(df)
-    if df.empty:
-        return df
-    return df.sort_values("timestamp").groupby(["region", "symbol"], as_index=False).tail(1)
 
 
 def _news_list(stories):
@@ -366,13 +357,13 @@ def _dark_table(id_: str, data, columns, markdown_cols: tuple[str, ...] = ()) ->
 def update_dashboard(region_tab: str):
     scope_label = "Global" if region_tab == "Global" else region_tab
     region = REGION_CODE.get(region_tab)
-    df = read_quotes(region=region)
 
-    # Each symbol has many historical rows (one per bar), so every "current
-    # standing" view below (bar chart, latest-data table, gainers, volume,
-    # volatility) is computed against the most recent bar per symbol, scoped
-    # to whichever tab is selected.
-    latest_tab = _latest_per_symbol(df)
+    # Each symbol has many historical rows (one per bar) -- millions across
+    # the whole table -- so every "current standing" view below (bar chart,
+    # latest-data table, gainers, volume, volatility) asks the DB for just
+    # the most recent bar per symbol directly (via read_latest_quotes' SQL
+    # window function) rather than loading the full history into pandas.
+    latest_tab = read_latest_quotes(region=region)
 
     hero = [
         _stat_card(f"Symbols Tracked ({scope_label})", str(len(latest_tab)) if not latest_tab.empty else "0"),
@@ -451,8 +442,10 @@ def update_dashboard(region_tab: str):
     if region_tab != "Global":
         region_growth_content = _empty_state(f"Switch to the Global tab to compare regions (you're on {scope_label}).", icon="\U0001f30d")
     else:
-        all_quotes = read_quotes()
-        latest_all = _latest_per_symbol(all_quotes)
+        # region_tab == "Global" here, so latest_tab (queried with region=None
+        # above) already *is* the all-regions latest snapshot -- no need to
+        # query again.
+        latest_all = latest_tab
         region_perf = analyze.region_growth(latest_all) if not latest_all.empty else latest_all
         if region_perf.empty:
             region_growth_content = _empty_state("No region data yet.")
@@ -468,7 +461,24 @@ def update_dashboard(region_tab: str):
             region_fig.update_layout(title="Average change % by region", showlegend=False)
             region_growth_content = dcc.Graph(figure=region_fig)
 
-    quotes_with_extras = _with_sparkline(_with_company(latest_tab), df) if not latest_tab.empty else _with_company(latest_tab)
+    if latest_tab.empty:
+        quotes_with_extras = _with_company(latest_tab)
+    else:
+        # Only the last 15 bars per symbol are needed for the sparkline, not
+        # each symbol's full history. On the Global tab latest_tab spans all
+        # 3 regions, so group the symbol list by each row's own region
+        # rather than assuming the single `region` filter used above.
+        if region:
+            recent_bars = read_recent_bars(region=region, symbols=latest_tab["symbol"].tolist(), limit_per_symbol=15)
+        else:
+            recent_bars = pd.concat(
+                [
+                    read_recent_bars(region=r, symbols=grp["symbol"].tolist(), limit_per_symbol=15)
+                    for r, grp in latest_tab.groupby("region")
+                ],
+                ignore_index=True,
+            )
+        quotes_with_extras = _with_sparkline(_with_company(latest_tab), recent_bars)
 
     if quotes_with_extras.empty:
         quotes_table = _empty_state(
@@ -569,9 +579,8 @@ def update_trend_chart(symbol: str | None):
     if not symbol:
         return _empty_figure("Search and select a symbol above to see its trend.")
 
-    history = read_quotes()
-    if not history.empty:
-        history = history[history["symbol"] == symbol].sort_values("timestamp")
+    region = SYMBOL_REGION_CODE.get(symbol)
+    history = read_symbol_history(region, symbol) if region else pd.DataFrame()
 
     if history.empty:
         return _empty_figure(f"No stored data for {symbol} yet — run scripts/backfill_db.py to populate it.")
