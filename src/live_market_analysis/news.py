@@ -2,6 +2,18 @@ import yfinance as yf
 
 MARKET_INDEX = "^GSPC"
 
+# One representative index per tracked region, for the dashboard's per-region
+# "Top Stories" sections. Global and US deliberately use different tickers
+# (^GSPC vs ^DJI) -- yfinance tags the same major-market story to multiple
+# related index tickers, so reusing one ticker for both made the two sections
+# show near-identical stories.
+REGION_INDEX = {
+    "Global": "^GSPC",
+    "US": "^DJI",
+    "Europe": "^STOXX50E",
+    "Asia": "^HSI",
+}
+
 
 def _normalize_news_item(item: dict) -> dict:
     """yfinance's news schema has changed across versions (flat vs. nested under
@@ -41,8 +53,8 @@ def get_company_news(symbol: str, count: int = 5) -> list[dict]:
     return [_normalize_news_item(item) for item in items]
 
 
-def get_top_stories(count: int = 5) -> list[dict]:
-    items = yf.Ticker(MARKET_INDEX).get_news(count=count)
+def get_top_stories(count: int = 5, index: str = MARKET_INDEX) -> list[dict]:
+    items = yf.Ticker(index).get_news(count=count)
     return [_normalize_news_item(item) for item in items]
 
 
