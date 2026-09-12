@@ -71,12 +71,21 @@ def latest_per_symbol(df: pd.DataFrame) -> pd.DataFrame:
     )
 
 
+def _traded(df: pd.DataFrame) -> pd.DataFrame:
+    """Drops stale no-trade prints (volume 0, so open/high/low/close all
+    collapse to the same carried-forward price) before ranking -- otherwise
+    thinly-traded symbols with a flat final tick dominate "top" lists with a
+    change_pct that isn't backed by an actual trade."""
+    traded = df[df["volume"] > 0]
+    return traded if not traded.empty else df
+
+
 def top_gainers(df: pd.DataFrame, n: int = 5) -> pd.DataFrame:
-    return df.nlargest(n, "change_pct")
+    return _traded(df).nlargest(n, "change_pct")
 
 
 def top_losers(df: pd.DataFrame, n: int = 5) -> pd.DataFrame:
-    return df.nsmallest(n, "change_pct")
+    return _traded(df).nsmallest(n, "change_pct")
 
 
 def region_growth(df: pd.DataFrame) -> pd.DataFrame:
