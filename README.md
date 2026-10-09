@@ -1,8 +1,21 @@
 # Live Market Analysis
 
-A Dash dashboard tracking live-ish stock market data across Europe, the US, and Asia, with growth analysis, region performance, and news.
+A Dash dashboard tracking stock market data across Europe, the US, and Asia, with growth analysis and region performance.
 
-## Setup
+> **The data is static.** The free API tiers this project uses are tightly rate-limited (for example, 20 calls a day for European quotes), so a public dashboard can't pull live data. The hosted demo reads a stored snapshot instead: daily bars for 485 symbols from 11 Sep 2024 to 11 Sep 2026. Nothing is fetched live, and the news panels are switched off in the demo. The snapshot is `data/snapshot.db`, built from the full local database by `scripts/build_snapshot.py`.
+
+## Run the static demo locally
+
+No API keys needed. With only the committed snapshot in `data/`:
+
+```
+uv sync
+uv run python -m live_market_analysis.dashboard.app
+```
+
+If a full `market_data.db` exists in the repo root, the app uses that instead of the snapshot.
+
+## Setup (to fetch fresh data)
 
 1. Install dependencies:
    ```

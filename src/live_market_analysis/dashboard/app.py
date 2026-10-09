@@ -8,7 +8,7 @@ from dash import Dash, Input, Output, State, dash_table, dcc, html
 from dash.dash_table.Format import Format, Group, Scheme, Sign
 
 from live_market_analysis.data_handling import analyze
-from live_market_analysis.data_handling.db import read_latest_quotes, read_recent_bars, read_symbol_history
+from live_market_analysis.data_handling.db import IS_SNAPSHOT, read_latest_quotes, read_recent_bars, read_symbol_history
 from live_market_analysis.data_handling.symbols import (
     get_asia_pairs,
     get_asia_symbol_names,
@@ -219,6 +219,7 @@ def _stat_card(label: str, value: str, sub: str = "", tone: str = "") -> html.Di
 
 
 app = Dash(__name__)
+server = app.server  # WSGI entry point for gunicorn
 
 app.layout = html.Div(
     [
@@ -237,7 +238,10 @@ app.layout = html.Div(
         html.Div(
             [
                 html.P(
-                    "Read-only over the local database — no live/refresh calls, ever. Browsing, "
+                    "Static demo: because of API pulling restrictions, the data here is a stored snapshot "
+                    "(daily bars up to 11 Sep 2026) and nothing is fetched live."
+                    if IS_SNAPSHOT
+                    else "Read-only over the local database — no live/refresh calls, ever. Browsing, "
                     "switching tabs, and picking symbols only re-reads what's already stored. To "
                     "grow the database, run scripts/backfill_db.py separately (it makes real API "
                     "calls and is never triggered from here).",
@@ -639,6 +643,8 @@ def load_top_stories(_id):
     particular can otherwise return near-identical sets -- fetch extra
     candidates per region and drop any story (by link) already claimed by an
     earlier region."""
+    if IS_SNAPSHOT:
+        return {}
     stories_by_tab = {}
     seen_links = set()
     for tab in REGION_TABS:
@@ -670,6 +676,8 @@ def load_top_stories(_id):
 )
 def show_top_stories(region_tab, stories_by_tab):
     title = f"Top Stories — {region_tab}"
+    if IS_SNAPSHOT:
+        return title, [_empty_state("News is switched off in the static demo.", icon="\U0001f4f0")]
     if not stories_by_tab:
         return title, [_empty_state("Loading stories…", icon="\U0001f4f0")]
 
@@ -689,6 +697,9 @@ def show_company_news(active_cell, table_data):
 
     row = table_data[active_cell["row"]]
     symbol = row["symbol"]
+
+    if IS_SNAPSHOT:
+        return _empty_state("Company news is switched off in the static demo.", icon="\U0001f4f0")
 
     try:
         stories = news.get_company_news(_yahoo_ticker(symbol), count=5)

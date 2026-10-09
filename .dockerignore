@@ -1,0 +1,6 @@
+.git
+.claude
+.venv
+.cache
+data/raw
+market_data.db*

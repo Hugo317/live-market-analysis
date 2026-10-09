@@ -3,7 +3,15 @@ from pathlib import Path
 
 import pandas as pd
 
-DB_PATH = Path(__file__).resolve().parents[3] / "market_data.db"
+ROOT = Path(__file__).resolve().parents[3]
+FULL_DB_PATH = ROOT / "market_data.db"
+SNAPSHOT_PATH = ROOT / "data" / "snapshot.db"
+
+# The full database is large and gitignored, so a fresh clone (or a deployed
+# copy) only has the small committed snapshot. Everything stays read-only
+# either way; IS_SNAPSHOT lets the dashboard switch off its live news calls.
+DB_PATH = FULL_DB_PATH if FULL_DB_PATH.exists() else SNAPSHOT_PATH
+IS_SNAPSHOT = DB_PATH == SNAPSHOT_PATH
 
 COLUMNS = ["region", "symbol", "timestamp", "open", "high", "low", "close", "volume", "change", "change_pct"]
 
